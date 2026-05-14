@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Café Number Wheel</title>
+    <style>
+        :root {
+            --dark-coffee: #3E2723;
+            --latte: #D7CCC8;
+            --accent: #8D6E63;
+            --cream: #EFEBE9;
+        }
+
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: var(--cream);
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            overflow: hidden;
+            touch-action: manipulation;
+        }
+
+        h1 { color: var(--dark-coffee); margin-bottom: 20px; font-size: 2.5rem; }
+
+        .wheel-box {
+            position: relative;
+            width: 80vw;
+            max-width: 500px;
+            aspect-ratio: 1 / 1;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 8px solid var(--dark-coffee);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1);
+        }
+
+        /* The Indicator Arrow */
+        .pointer {
+            position: absolute;
+            top: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0; 
+            height: 0; 
+            border-left: 25px solid transparent;
+            border-right: 25px solid transparent;
+            border-top: 50px solid #D84315; /* Bright Orange/Red for visibility */
+            z-index: 20;
+            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3));
+        }
+
+        #spin-btn {
+            margin-top: 50px;
+            padding: 20px 60px;
+            font-size: 2rem;
+            font-weight: bold;
+            background-color: var(--dark-coffee);
+            color: white;
+            border: none;
+            border-radius: 15px;
+            cursor: pointer;
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+            active: scale(0.95);
+        }
+
+        #spin-btn:disabled { background-color: #bbb; }
+
+        #display {
+            margin-top: 30px;
+            font-size: 3rem;
+            font-weight: 900;
+            color: var(--dark-coffee);
+            height: 4rem;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Spin for a Surprise!</h1>
+
+    <div class="wheel-box">
+        <div class="pointer"></div>
+        <canvas id="canvas" width="600" height="600"></canvas>
+    </div>
+
+    <div id="display"></div>
+    <button id="spin-btn">SPIN</button>
+
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        const btn = document.getElementById('spin-btn');
+        const display = document.getElementById('display');
+
+        const sectors = ["1", "2", "3", "4", "5"];
+        const colors = ["#3E2723", "#5D4037", "#795548", "#8D6E63", "#A1887F"];
+        let rotation = 0;
+
+        function drawWheel() {
+            const numSectors = sectors.length;
+            const arc = (2 * Math.PI) / numSectors;
+
+            for (let i = 0; i < numSectors; i++) {
+                const angle = i * arc;
+                ctx.beginPath();
+                ctx.fillStyle = colors[i];
+                ctx.moveTo(300, 300);
+                ctx.arc(300, 300, 300, angle, angle + arc);
+                ctx.fill();
+
+                // Draw Text
+                ctx.save();
+                ctx.translate(300, 300);
+                ctx.rotate(angle + arc / 2);
+                ctx.textAlign = "right";
+                ctx.fillStyle = "#fff";
+                ctx.font = "bold 80px Arial";
+                ctx.fillText(sectors[i], 260, 30);
+                ctx.restore();
+            }
+        }
+
+        function spin() {
+            btn.disabled = true;
+            display.innerText = "";
+            
+            const extraDegrees = Math.floor(Math.random() * 360);
+            const spins = 1440; // 4 full rotations
+            rotation += (spins + extraDegrees);
+            
+            canvas.style.transform = `rotate(${rotation}deg)`;
+
+            setTimeout(() => {
+                btn.disabled = false;
+                const actualAngle = (rotation % 360);
+                // Math to find the sector under the 12 o'clock pointer
+                const sectorAngle = 360 / sectors.length;
+                const index = Math.floor(((360 - actualAngle + 270) % 360) / sectorAngle);
+                display.innerText = "RESULT: " + sectors[index];
+            }, 4000);
+        }
+
+        drawWheel();
+        btn.addEventListener('click', spin);
+    </script>
+</body>
+</html>
