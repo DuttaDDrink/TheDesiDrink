@@ -3,13 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Café Number Wheel</title>
+    <title>The Desi Drink - Spin & Win!</title>
+    <!-- Canvas Confetti Library for Celebration Effect -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         :root {
-            --dark-coffee: #3E2723;
-            --latte: #D7CCC8;
-            --accent: #8D6E63;
-            --cream: #EFEBE9;
+            --primary: #FF4500; /* Vibrant Orange Red */
+            --bg-gradient: linear-gradient(135deg, #FFD194 0%, #70E1F5 100%);
+            --wheel-border: #FFD700; /* Gold */
+            --text-dark: #2C3E50;
         }
 
         body {
@@ -17,92 +19,247 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            height: 100vh;
+            min-height: 100vh;
             margin: 0;
-            background-color: var(--cream);
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-            overflow: hidden;
+            background: var(--bg-gradient);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            overflow-x: hidden;
             touch-action: manipulation;
         }
 
-        h1 { color: var(--dark-coffee); margin-bottom: 20px; font-size: 2.5rem; }
-
-        .wheel-box {
-            position: relative;
-            width: 80vw;
-            max-width: 500px;
-            aspect-ratio: 1 / 1;
+        .header-title {
+            color: var(--text-dark);
+            text-align: center;
+            font-size: 2.8rem;
+            font-weight: 900;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 30px;
+            text-shadow: 2px 2px 4px rgba(255,255,255,0.7);
         }
 
-        #canvas {
-            width: 100%;
-            height: 100%;
-            border-radius: 50%;
-            border: 8px solid var(--dark-coffee);
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
-            transition: transform 4s cubic-bezier(0.1, 0, 0.1, 1);
+        .wheel-container {
+            position: relative;
+            width: 90vw;
+            max-width: 450px;
+            aspect-ratio: 1 / 1;
         }
 
         /* The Indicator Arrow */
         .pointer {
             position: absolute;
-            top: -10px;
+            top: -20px;
             left: 50%;
             transform: translateX(-50%);
             width: 0; 
             height: 0; 
             border-left: 25px solid transparent;
             border-right: 25px solid transparent;
-            border-top: 50px solid #D84315; /* Bright Orange/Red for visibility */
+            border-top: 55px solid #E74C3C;
             z-index: 20;
-            filter: drop-shadow(0 4px 4px rgba(0,0,0,0.3));
+            filter: drop-shadow(0 6px 6px rgba(0,0,0,0.4));
+        }
+
+        /* Center "The Desi Drink" Logo */
+        .center-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 120px;
+            height: 120px;
+            background-color: #fff;
+            border: 6px solid var(--wheel-border);
+            border-radius: 50%;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-weight: 900;
+            font-size: 1.1rem;
+            color: var(--primary);
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            padding: 10px;
+            box-sizing: border-box;
+            line-height: 1.2;
+        }
+
+        #canvas {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 10px solid var(--wheel-border);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.3);
+            transition: transform 5s cubic-bezier(0.1, 0, 0.1, 1);
+            background-color: #fff;
         }
 
         #spin-btn {
-            margin-top: 50px;
-            padding: 20px 60px;
-            font-size: 2rem;
-            font-weight: bold;
-            background-color: var(--dark-coffee);
+            margin-top: 40px;
+            padding: 18px 70px;
+            font-size: 1.8rem;
+            font-weight: 900;
+            background: linear-gradient(45deg, #FF512F, #DD2476);
             color: white;
             border: none;
-            border-radius: 15px;
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
-            active: scale(0.95);
+            box-shadow: 0 10px 20px rgba(221, 36, 118, 0.4);
+            transition: transform 0.2s, box-shadow 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
-        #spin-btn:disabled { background-color: #bbb; }
+        #spin-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 25px rgba(221, 36, 118, 0.5);
+        }
 
-        #display {
-            margin-top: 30px;
-            font-size: 3rem;
+        #spin-btn:disabled { 
+            background: #ccc; 
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        /* Celebration Modal Setup */
+        .modal-overlay {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.4s ease;
+            z-index: 100;
+            backdrop-filter: blur(5px);
+        }
+
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: all;
+        }
+
+        .modal-content {
+            background: #fff;
+            padding: 40px 30px;
+            border-radius: 20px;
+            text-align: center;
+            max-width: 90%;
+            width: 400px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            transform: scale(0.8);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        .modal-overlay.active .modal-content {
+            transform: scale(1);
+        }
+
+        .modal-title {
+            font-size: 2rem;
+            color: var(--primary);
+            margin: 0 0 10px 0;
             font-weight: 900;
-            color: var(--dark-coffee);
-            height: 4rem;
+        }
+
+        .modal-offer {
+            font-size: 1.3rem;
+            color: var(--text-dark);
+            margin-bottom: 30px;
+            font-weight: 600;
+            line-height: 1.4;
+        }
+
+        .whatsapp-btn {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background-color: #25D366;
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            text-decoration: none;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 15px;
+            width: 100%;
+            box-sizing: border-box;
+            transition: background 0.2s;
+        }
+
+        .whatsapp-btn:hover { background-color: #128C7E; }
+
+        .close-btn {
+            background: none;
+            border: 2px solid #ddd;
+            color: #777;
+            padding: 10px 20px;
+            border-radius: 10px;
+            font-size: 1rem;
+            cursor: pointer;
+            width: 100%;
+            font-weight: bold;
+            transition: all 0.2s;
+        }
+
+        .close-btn:hover {
+            background: #eee;
+            color: #333;
         }
     </style>
 </head>
 <body>
 
-    <h1>Spin for a Surprise!</h1>
+    <div class="header-title">Spin & Win!</div>
 
-    <div class="wheel-box">
+    <div class="wheel-container">
         <div class="pointer"></div>
+        <div class="center-logo">THE<br>DESI<br>DRINK</div>
         <canvas id="canvas" width="600" height="600"></canvas>
     </div>
 
-    <div id="display"></div>
-    <button id="spin-btn">SPIN</button>
+    <button id="spin-btn">SPIN NOW</button>
+
+    <!-- Celebration Pop-up -->
+    <div class="modal-overlay" id="modal">
+        <div class="modal-content">
+            <h2 class="modal-title" id="modal-title">Congratulations! 🎉</h2>
+            <p class="modal-offer" id="modal-offer-text">You won an amazing offer!</p>
+            <a href="#" id="whatsapp-share" class="whatsapp-btn" target="_blank">
+                <!-- Simple SVG WhatsApp Icon -->
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M12.01 2.014C6.5 2.014 2 6.486 2 11.968c0 1.745.452 3.447 1.31 4.957L2 22.014l5.244-1.365a10.027 10.027 0 004.766 1.206h.004c5.508 0 10.01-4.472 10.01-9.954 0-2.653-1.04-5.146-2.924-7.02A9.914 9.914 0 0012.01 2.014zm0 18.176a8.318 8.318 0 01-4.248-1.157l-.304-.18-3.158.822.842-3.056-.197-.312A8.256 8.256 0 013.684 11.97c0-4.57 3.75-8.293 8.33-8.293 2.23 0 4.32.862 5.894 2.426a8.237 8.237 0 012.435 5.86c-.002 4.572-3.753 8.293-8.333 8.293zm4.566-6.208c-.25-.124-1.48-.724-1.708-.808-.23-.083-.396-.124-.563.124-.167.248-.646.808-.792.973-.146.165-.292.186-.542.062-.25-.124-1.056-.386-2.01-1.233-.742-.66-1.242-1.476-1.388-1.724-.146-.248-.016-.382.11-.506.113-.11.25-.288.375-.432.125-.144.167-.248.25-.413.084-.165.042-.31-.02-.434-.063-.124-.563-1.344-.77-1.84-.204-.483-.41-.418-.564-.426-.145-.007-.31-.007-.476-.007-.167 0-.438.062-.667.31-.23.248-.875.848-.875 2.066s.896 2.395 1.02 2.56c.125.165 1.763 2.668 4.27 3.73.596.25 1.062.402 1.425.513.6.19 1.146.163 1.576.1.482-.072 1.48-.6 1.688-1.18.208-.58.208-1.077.146-1.18-.06-.104-.228-.166-.478-.29z"/>
+                </svg>
+                Share on WhatsApp
+            </a>
+            <button class="close-btn" id="close-modal">Close</button>
+        </div>
+    </div>
 
     <script>
         const canvas = document.getElementById('canvas');
         const ctx = canvas.getContext('2d');
-        const btn = document.getElementById('spin-btn');
-        const display = document.getElementById('display');
+        const spinBtn = document.getElementById('spin-btn');
+        const modal = document.getElementById('modal');
+        const modalTitle = document.getElementById('modal-title');
+        const modalOfferText = document.getElementById('modal-offer-text');
+        const whatsappShare = document.getElementById('whatsapp-share');
+        const closeModal = document.getElementById('close-modal');
 
-        const sectors = ["1", "2", "3", "4", "5"];
-        const colors = ["#3E2723", "#5D4037", "#795548", "#8D6E63", "#A1887F"];
+        // Segment Data: Short label for wheel, long text for popup
+        const sectors = [
+            { label: "10% OFF", fullOffer: "10% OFF on your next purchase!", color: "#FF1493", textColor: "#FFFFFF" },
+            { label: "NO LUCK", fullOffer: "Better luck next time! Have a great day.", color: "#FF8C00", textColor: "#FFFFFF" },
+            { label: "COMBO 1", fullOffer: "Mango Lassi + Any Ice Cream of your choice @ ₹99!", color: "#00CED1", textColor: "#000000" },
+            { label: "COMBO 2", fullOffer: "Stuffed Ice Cream + Orange Mocktail @ ₹99!", color: "#9400D3", textColor: "#FFFFFF" },
+            { label: "FREE COFFEE", fullOffer: "Free Hot Coffee on us!", color: "#FFD700", textColor: "#000000" }
+        ];
+
         let rotation = 0;
 
         function drawWheel() {
@@ -111,46 +268,109 @@
 
             for (let i = 0; i < numSectors; i++) {
                 const angle = i * arc;
+                
+                // Draw slice
                 ctx.beginPath();
-                ctx.fillStyle = colors[i];
+                ctx.fillStyle = sectors[i].color;
                 ctx.moveTo(300, 300);
                 ctx.arc(300, 300, 300, angle, angle + arc);
                 ctx.fill();
 
-                // Draw Text
+                // Draw text
                 ctx.save();
                 ctx.translate(300, 300);
                 ctx.rotate(angle + arc / 2);
                 ctx.textAlign = "right";
-                ctx.fillStyle = "#fff";
-                ctx.font = "bold 80px Arial";
-                ctx.fillText(sectors[i], 260, 30);
+                ctx.fillStyle = sectors[i].textColor;
+                ctx.font = "bold 32px 'Segoe UI', Arial";
+                
+                // Push text slightly inward to avoid edges
+                ctx.fillText(sectors[i].label, 260, 10);
                 ctx.restore();
             }
         }
 
+        function triggerConfetti() {
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            (function frame() {
+                confetti({
+                    particleCount: 5,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#FF1493', '#FF8C00', '#FFD700', '#00CED1']
+                });
+                confetti({
+                    particleCount: 5,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#FF1493', '#FF8C00', '#FFD700', '#00CED1']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            }());
+        }
+
         function spin() {
-            btn.disabled = true;
-            display.innerText = "";
+            spinBtn.disabled = true;
+            spinBtn.innerText = "SPINNING...";
             
+            // Generate a random spin
             const extraDegrees = Math.floor(Math.random() * 360);
-            const spins = 1440; // 4 full rotations
+            const spins = 1800; // 5 full fast rotations
             rotation += (spins + extraDegrees);
             
             canvas.style.transform = `rotate(${rotation}deg)`;
 
+            // Wait for CSS transition to finish
             setTimeout(() => {
-                btn.disabled = false;
+                spinBtn.disabled = false;
+                spinBtn.innerText = "SPIN AGAIN";
+                
+                // Calculate the winning segment
                 const actualAngle = (rotation % 360);
-                // Math to find the sector under the 12 o'clock pointer
                 const sectorAngle = 360 / sectors.length;
+                
+                // 270 offsets the 12 o'clock pointer position relative to 0 degree draw start
                 const index = Math.floor(((360 - actualAngle + 270) % 360) / sectorAngle);
-                display.innerText = "RESULT: " + sectors[index];
-            }, 4000);
+                const result = sectors[index];
+
+                // Update Modal Content
+                if(result.label === "NO LUCK") {
+                    modalTitle.innerText = "Oh no! 🥺";
+                    triggerConfetti = function(){}; // disable confetti for no luck
+                } else {
+                    modalTitle.innerText = "Congratulations! 🎉";
+                }
+
+                modalOfferText.innerText = result.fullOffer;
+                
+                // Setup WhatsApp Link
+                const message = `I just spun 'The Desi Drink' wheel and got: *${result.fullOffer}*! Come try your luck! 🍹🍦`;
+                whatsappShare.href = `https://api.whatsapp.com/send?text=${encodeURIComponent(message)}`;
+
+                // Show Modal and trigger celebration
+                modal.classList.add('active');
+                if(result.label !== "NO LUCK") {
+                    triggerConfetti();
+                }
+
+            }, 5000); // 5s matches the CSS transition time
         }
 
+        // Close Modal Logic
+        closeModal.addEventListener('click', () => {
+            modal.classList.remove('active');
+        });
+
+        // Initialize App
         drawWheel();
-        btn.addEventListener('click', spin);
+        spinBtn.addEventListener('click', spin);
     </script>
 </body>
 </html>
